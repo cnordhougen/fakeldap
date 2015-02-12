@@ -302,7 +302,7 @@ class MockLDAP(object):
         try:
             entry = self.directory[dn]
         except KeyError:
-            raise ldap.NO_SUCH_OBJECT
+            raise self.NO_SUCH_OBJECT
 
         for item in mod_attrs:
             op, key, value = item
@@ -349,7 +349,7 @@ class MockLDAP(object):
         try:
             del self.directory[dn]
         except KeyError:
-            raise ldap.NO_SUCH_OBJECT
+            raise self.NO_SUCH_OBJECT
 
         return (107, [])
 
@@ -370,7 +370,7 @@ class MockLDAP(object):
         attrs = self.directory.get(base)
         print attrs
         if attrs is None:
-            raise ldap.NO_SUCH_OBJECT
+            raise self.NO_SUCH_OBJECT
 
         return [(base, attrs)]
 
@@ -382,7 +382,7 @@ class MockLDAP(object):
         print entry
         try:
             self.directory[dn]
-            raise ALREADY_EXISTS
+            raise self.ALREADY_EXISTS
         except KeyError:
             self.directory[dn] = entry
             return (105,[], len(self.calls), [])
