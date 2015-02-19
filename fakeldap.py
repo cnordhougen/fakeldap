@@ -122,14 +122,28 @@ class MockLDAP(object):
         self.options = {}
         self.tls_enabled = False
 
+    @staticmethod
+    def rtup(value):
+        """
+        Recursively convert lists to tuples. More robust for the 'hack'
+        used with set_return_value due to lists not being hashable
+        """
+        if type(value) is list:
+            return MockLDAP.rtup(tuple(value))
+        elif type(value) is tuple:
+            for i, m in enumerate(value):
+                value = value[:i] + (MockLDAP.rtup(m),) + value[i+1:]
+            return value
+        else:
+            return value
+
     def set_return_value(self, api_name, arguments, value):
         """
         Stores a preset return value for a given API with a given set of
         arguments.
         """
         # hack, cause lists are not hashable
-        if type(arguments[1]) is types.ListType:
-            arguments[1] = tuple(arguments[1])
+        arguments = MockLDAP.rtup(arguments)
         print "Set value. api_name: %s, arguments: %s, value: %s" % (api_name, arguments, value)
         self.return_value_maps[api_name][arguments] = value
 
@@ -188,9 +202,9 @@ class MockLDAP(object):
 
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         # Hack, cause attributes as a list can't be hashed for storing it
-        if type(attrlist) is types.ListType:
-            attrlist = ', '.join(attrlist)
-
+        #if type(attrlist) is types.ListType:
+        #    attrlist = ', '.join(attrlist)
+    
         self._record_call('search_s', {
             'base': base,
             'scope': scope,
@@ -380,10 +394,9 @@ class MockLDAP(object):
         for item in record:
             entry[item[0]] = item[1]
         print entry
-        try:
-            self.directory[dn]
+        if dn in self.directory:
             raise self.ALREADY_EXISTS
-        except KeyError:
+        else:
             self.directory[dn] = entry
             return (105,[], len(self.calls), [])
 
@@ -411,6 +424,7 @@ class MockLDAP(object):
 
     def _get_return_value(self, api_name, arguments):
         try:
+            arguments = MockLDAP.rtup(arguments)
             print "api: %s, arguments: %s" % (api_name, arguments)
             value = self.return_value_maps[api_name][arguments]
         except KeyError:
